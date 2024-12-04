@@ -40,6 +40,48 @@ export const makeIssue = (params: {
   };
 };
 
+/**
+ * Processes a large input string in chunks and validates each chunk using a custom processor.
+ * Optimized for speed and memory efficiency with configurable chunk and batch sizes.
+ *
+ * @param {string} input - The input string to be processed in chunks.
+ * @param {number} chunkSize - The size of each chunk in characters.
+ * @param {number} batchSize - The number of chunks to process in one batch.
+ * @param {(chunk: string) => boolean} processor - A function to validate each chunk. Should return `true` if valid, `false` otherwise.
+ * @returns {boolean} - Returns `true` if all chunks pass validation, otherwise `false`.
+ *
+ * @example
+ * const isValid = processInChunks(
+ *   largeString,
+ *   2048, // chunk size
+ *   4,    // batch size
+ *   (chunk) => /^[A-Za-z0-9+/]+={0,2}$/.test(chunk)
+ * );
+ * console.log(isValid); // true or false
+ */
+export processInChunks =(
+  input: string,
+  chunkSize: number,
+  batchSize: number,
+  processor: (chunk: string) => boolean
+): boolean =>{
+  const totalChunks = Math.ceil(input.length / chunkSize);
+  const chunkStartIndices = Array.from({ length: totalChunks }, (_, i) => i * chunkSize);
+
+  for (let i = 0; i < totalChunks; i += batchSize) {
+    const batch = chunkStartIndices.slice(i, i + batchSize).map((startIndex) =>
+      input.substring(startIndex, startIndex + chunkSize)
+    );
+
+    // Validate the batch; stop on the first failure
+    if (!batch.every(processor)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export type ParseParams = {
   path: (string | number)[];
   errorMap: ZodErrorMap;
